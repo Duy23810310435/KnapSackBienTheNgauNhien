@@ -1,9 +1,11 @@
 ﻿let currentItems = [];
 let isGenerating = false;
 
-// BƯỚC 1: KHAI BÁO BIẾN AUDIO CONTEXT TOÀN CỤC (CHỈ TẠO 1 LẦN)
-let audioCtx = null;
+// KHAI BÁO MẢNG LƯU TRỮ CÁC TIMEOUT ĐỂ "DIỆT BÓNG MA" dư thừa khi chọn 50 vật phẩm, 500, 1,000....
+let activeTimeouts = [];
 
+//KHAI BÁO BIẾN AUDIO CONTEXT TOÀN CỤC
+let audioCtx = null;
 function initAudio() {
     if (!audioCtx) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -11,8 +13,6 @@ function initAudio() {
             audioCtx = new AudioContext();
         }
     }
-    // Trình duyệt (nhất là Chrome/Edge) thường chặn âm thanh cho đến khi người dùng tương tác.
-    // Dòng này giúp đánh thức Audio nếu nó đang bị trình duyệt cho "ngủ".
     if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
@@ -20,12 +20,10 @@ function initAudio() {
 
 function playTickSound() {
     if (!audioCtx) return;
-
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
 
     osc.type = 'triangle';
-    // Sử dụng audioCtx.currentTime để âm thanh phát ra NGAY LẬP TỨC không có độ trễ
     osc.frequency.setValueAtTime(800 + Math.random() * 200, audioCtx.currentTime);
 
     gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
@@ -38,18 +36,23 @@ function playTickSound() {
 }
 
 function generateRandomItems() {
-    if (isGenerating) return;
+    // Diệt toàn bộ thẻ cũ đang xếp hàng ngầm trong bộ đếm
+    activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    activeTimeouts = []; // Xóa rỗng mảng sau khi diệt xong
+
+    // Mở khóa phòng trường hợp người dùng click quá nhanh
+    isGenerating = false;
 
     const container = document.getElementById('item-container');
     const btnGenerate = document.getElementById('btn-generate');
     const btnSubmit = document.getElementById('btn-submit');
+    const countSelect = document.getElementById('item-count'); // Lấy Select Box
 
     if (!container) return;
 
-    // BƯỚC 2: KHỞI ĐỘNG HỆ THỐNG ÂM THANH NGAY KHI BẤM NÚT
     initAudio();
-
     isGenerating = true;
+
     if (btnGenerate) {
         btnGenerate.disabled = true;
         btnGenerate.innerHTML = 'Đang quay số...';
@@ -63,40 +66,16 @@ function generateRandomItems() {
     container.innerHTML = '';
     currentItems = [];
 
-    let delay = 0;
-    const totalItems = 10;
+    // Lấy số lượng vật phẩm (N) do người chơi chọn
+    const totalItems = countSelect ? parseInt(countSelect.value) : 10;
 
-    //danh sách tên vật phẩm ngẫu nhiên
     const danhSachTenVatPham = [
-        // **SÚNG** (nhân bản x5-6 lần mỗi loại chính)
-        "[⌐╦ᡁ᠊╾]Súng lục 1911", "[⌐╦ᡁ᠊╾]Súng lục 1911", "[⌐╦ᡁ᠊╾]Súng lục 1911", "[⌐╦ᡁ᠊╾]Súng lục 1911", "[⌐╦ᡁ᠊╾]Súng lục 1911",
-        "[⌐╦ᡁ᠊╾]Súng lục Baretta M9A4", "[⌐╦ᡁ᠊╾]Súng lục Baretta M9A4", "[⌐╦ᡁ᠊╾]Súng lục Baretta M9A4",
-        "[⌐╦ᡁ᠊╾]Súng lục Desert Eagle .50", "[⌐╦ᡁ᠊╾]Súng lục Desert Eagle .50", "[⌐╦ᡁ᠊╾]Súng lục Desert Eagle .50",
-        "[⌐╦ᡁ᠊╾]Súng lục Glock 17", "[⌐╦ᡁ᠊╾]Súng lục Glock 17", "[⌐╦ᡁ᠊╾]Súng lục Glock 17", "[⌐╦ᡁ᠊╾]Súng lục Glock 17",
-        "[╾╤デ╦︻]    Súng trường AK-47", "[╾╤デ╦︻]    Súng trường AK-47", "[╾╤デ╦︻]    Súng trường AK-47", "[╾╤デ╦︻]    Súng trường AK-47", "[╾╤デ╦︻]    Súng trường AK-47", "[╾╤デ╦︻]    Súng trường AK-47",
-        "[ᡕᠵデᡁ᠊╾━]    Súng bắn tỉa M24", "[ᡕᠵデᡁ᠊╾━]    Súng bắn tỉa M24", "[ᡕᠵデᡁ᠊╾━]    Súng bắn tỉa M24", "[ᡕᠵデᡁ᠊╾━]    Súng bắn tỉa M24", "[ᡕᠵデᡁ᠊╾━]    Súng bắn tỉa M24",
-
-        // **ĐẠN DƯỢC** (nhân bản x12-15 lần - drop rate cực cao)
-        "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Hộp đạn 9mm",
-        "[⌯⁍]Băng đạn .45 ACP (1911)", "[⌯⁍]Băng đạn .45 ACP (1911)", "[⌯⁍]Băng đạn .45 ACP (1911)", "[⌯⁍]Băng đạn .45 ACP (1911)",
-        "[⌯⁍]Băng đạn .50 AE (Desert Eagle)", "[⌯⁍]Băng đạn .50 AE (Desert Eagle)", "[⌯⁍]Băng đạn .50 AE (Desert Eagle)",
-        "[⌯⁍]Hộp đạn 5.56mm NATO", "[⌯⁍]Hộp đạn 5.56mm NATO", "[⌯⁍]Hộp đạn 5.56mm NATO", "[⌯⁍]Hộp đạn 5.56mm NATO", "[⌯⁍]Hộp đạn 5.56mm NATO",
-        "[⌯⁍]Băng đạn AK-47 7.62x39", "[⌯⁍]Băng đạn AK-47 7.62x39", "[⌯⁍]Băng đạn AK-47 7.62x39", "[⌯⁍]Băng đạn AK-47 7.62x39",
-        "[⌯⁍]Hộp đạn (sniper)", "[⌯⁍]Hộp đạn (sniper)", "[⌯⁍]Hộp đạn (sniper)", "[⌯⁍]Hộp đạn (sniper)",
-        "[⌯⁍]Mag STANAG 30 viên", "[⌯⁍]Mag STANAG 30 viên", "[⌯⁍]Mag STANAG 30 viên",
-        "[⌯⁍]Drum mag AK-75 viên", "[⌯⁍]Drum mag AK-75 viên", "[⌯⁍]Drum mag AK-75 viên",
-
-        // **BOM/LƯU/FLASH** (nhân bản x10 lần)
-        "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67", "[🧨💥]Lựu đạn M67",
-        "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18", "[🧨💨]Bom khói M18",
-        "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84", "[🧨😵‍💫]    Flashbang M84",
-
-        // **MEDKIT/HEAL** (nhân bản x10 lần)
-        "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)",
-        "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)", "[🧰]Băng cứu thương (Medkit)",
-        "[💊]Thuốc giảm đau (Painkillers)", "[💊]Thuốc giảm đau (Painkillers)", "[💊]Thuốc giảm đau (Painkillers)", "[💊]Thuốc giảm đau (Painkillers)", "[💊]Thuốc giảm đau (Painkillers)",
-
-        // **GIÁP/PHỤ KIỆN** (ít nhân bản hơn, vẫn logic)
+        "[⌐╦ᡁ᠊╾]Súng lục 1911", "[⌐╦ᡁ᠊╾]Súng lục Baretta M9A4", "[⌐╦ᡁ᠊╾]Súng lục Desert Eagle .50", "[⌐╦ᡁ᠊╾]Súng lục Glock 17",
+        "[╾╤デ╦︻]           Súng trường AK-47", "[ᡕᠵデᡁ᠊╾━]       Súng bắn tỉa M24", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Băng đạn .45 ACP (1911)",
+        "[⌯⁍]Băng đạn .50 AE (Desert Eagle)", "[⌯⁍]Hộp đạn 5.56mm NATO", "[⌯⁍]Băng đạn AK-47 7.62x39",
+        "[⌯⁍]Hộp đạn (sniper)", "[⌯⁍]Mag STANAG 30 viên", "[⌯⁍]Drum mag AK-75 viên",
+        "[🧨💥]Lựu đạn M67", "[🧨💨]Bom khói M18", "[🧨😵‍💫]                                        Flashbang M84",
+        "[🧰]Băng cứu thương (Medkit)", "[💊]Thuốc giảm đau (Painkillers)",
         "[⛑]Mũ cối Level 3", "[🎽]Giáp chống đạn Level 4", "[⛑]Mũ ACH Level 3A", "[🎽]Plate Carrier với tấm ceramic",
         "[🎽]Áo Giáp Kevlar", "[⛑]Mũ OPS-Core FAST", "[🎽]Áo giáp mềm NIJ Level II", "Kính bảo hộ balistic",
         "Balo chiến thuật", "[🔭]Ống nhòm tầm xa", "Dao găm quân dụng", "Mặt nạ phòng độc",
@@ -105,38 +84,69 @@ function generateRandomItems() {
         "Giày boots quân sự", "Dao đa năng Leatherman", "Pin dự phòng", "Túi ngủ sinh tồn", "La bàn định vị"
     ];
 
+    // BƯỚC 1: XỬ LÝ DỮ LIỆU TỨC THÌ (Tạo mảng cực nhanh trong bộ nhớ)
     for (let i = 1; i <= totalItems; i++) {
-        setTimeout(() => {
-            const weight = Math.floor(Math.random() * 20) + 1;//Weight từ 1-20kg
-            const value = Math.floor(Math.random() * 90) + 10;//Value từ 10-99$
-            const ratio = (value / weight).toFixed(2); //tỷ lệ
-            //bốc ngẫu nhiên 1 cái tên cho Vật phẩm
-            // Math.random() sẽ bốc ngẫu nhiên 1 vị trí (index) từ 0 đến độ dài của danhSachTenVatPham
-            const viTriNgauNhien = Math.floor(Math.random() * danhSachTenVatPham.length);
-            const tenVatPham = danhSachTenVatPham[viTriNgauNhien];
-            // Lưu trữ thông tin vật phẩm vào mảng hiện tại
-            currentItems.push({
-                Id: i,
-                TrongLuong: weight,
-                GiaTri: value,
-                Ten: tenVatPham //gửi kèm tên để lưu
-            });
-            //Đưa thông tin vật phẩm ra thẻ và hiện lên màn hình giao diện
+        const weight = Math.floor(Math.random() * 20) + 1;
+        const value = Math.floor(Math.random() * 90) + 10;
+        const viTriNgauNhien = Math.floor(Math.random() * danhSachTenVatPham.length);
+        const tenVatPham = danhSachTenVatPham[viTriNgauNhien];
+
+        currentItems.push({
+            Id: i,
+            TrongLuong: weight,
+            GiaTri: value,
+            Ten: tenVatPham
+        });
+    }
+
+    // BƯỚC 2: HIỂN THỊ UI THÔNG MINH
+    // KHÔNG BAO GIỜ vẽ quá 100 DOM Element để tránh sập trình duyệt
+    const MAX_DISPLAY = 100;
+    const itemsToDisplay = currentItems.slice(0, MAX_DISPLAY);
+
+    // Auto điều chỉnh tốc độ bay vào (Ít thì bay chậm ngắm cho đẹp, nhiều thì bay vèo vèo)
+    const renderDelay = totalItems <= 10 ? 150 : (totalItems <= 50 ? 50 : 10);
+    let delay = 0;
+
+    itemsToDisplay.forEach((item, index) => {
+        // Gán hàm setTimeout vào một biến timerId để lưu trữ
+        const timerId = setTimeout(() => {
             const card = document.createElement('div');
             card.className = 'item-card';
             card.style.animation = 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             card.innerHTML = `
-                <h4 style="color: #FFD700; font-size: 16px; margin-bottom: 10px;">${tenVatPham} (ID:${i})</h4>
-                <p><strong>Khối lượng:</strong> ${weight} kg</p>
-                <p><strong>Giá trị:</strong> $${value}</p>
-                <p><strong>Tỷ lệ:</strong> ${ratio}</p>
+                <h4 style="color: #FFD700; font-size: 16px; margin-bottom: 10px;">${item.Ten} (ID:${item.Id})</h4>
+                <p><strong>Khối lượng:</strong> ${item.TrongLuong} kg</p>
+                <p><strong>Giá trị:</strong> $${item.GiaTri}</p>
+                <p><strong>Tỷ lệ:</strong> ${(item.GiaTri / item.TrongLuong).toFixed(2)}</p>
             `;
-            container.appendChild(card); //quảng thẻ lên màn hình giao diện
+            container.appendChild(card);
 
-            // Âm thanh giờ đây sẽ gọi thẳng vào phần cứng, không cần khởi tạo lại
-            playTickSound();
+            // Giảm tải âm thanh nếu load quá nhanh (Tránh bị rè loa vì gọi API Audio liên tục)
+            if (renderDelay >= 50 || index % 3 === 0) {
+                playTickSound();
+            }
 
-            if (i === totalItems) {
+            // Kết thúc hiệu ứng của thẻ được hiển thị cuối cùng
+            if (index === itemsToDisplay.length - 1) {
+                // Nếu quy mô lớn hơn mức cho phép hiển thị -> In ra dòng cảnh báo
+                if (totalItems > MAX_DISPLAY) {
+                    const notice = document.createElement('div');
+                    notice.style.width = "100%";
+                    notice.style.textAlign = "center";
+                    notice.style.marginTop = "30px";
+                    notice.style.padding = "20px";
+                    notice.style.border = "1px dashed #FFD700";
+                    notice.style.borderRadius = "8px";
+                    notice.style.backgroundColor = "rgba(0,0,0,0.5)";
+                    notice.innerHTML = `
+                        <h3 style="color: #e74c3c; margin-bottom:10px;">ĐÃ TẠO THÀNH CÔNG ${totalItems.toLocaleString()} VẬT PHẨM </h3>
+                        <p style="color: #b0c4de;"><strong>${(totalItems - MAX_DISPLAY).toLocaleString()}</strong> vật phẩm tiếp theo đang được chạy ngầm trong bộ nhớ.</p>
+                        <p style="font-size:13px; color: #888;">(Giao diện tự động ẩn để đảm bảo trình duyệt web không bị sập đồ họa, sẵn sàng test giới hạn AI ở vòng sau).</p>`;
+                    container.appendChild(notice);
+                }
+
+                // Kích hoạt lại nút bấm
                 if (btnGenerate) {
                     btnGenerate.disabled = false;
                     btnGenerate.innerHTML = 'Xoay ngẫu nhiên lại';
@@ -150,8 +160,11 @@ function generateRandomItems() {
             }
         }, delay);
 
-        delay += 150; //độ chễ khi quay ra từng thẻ một
-    }
+        // Đưa ID của thẻ chuẩn bị bay vào danh sách kiểm soát activeTimeouts
+        activeTimeouts.push(timerId);
+
+        delay += renderDelay;
+    });
 }
 
 function submitItems() {
@@ -163,12 +176,17 @@ function submitItems() {
         body: JSON.stringify(currentItems)
     })
         .then(response => {
-            //Nếu Phía Controller Return.OK() thì cho phép chuyển sang trang Game
             if (response.ok) {
                 window.location.href = '/Knapsack/Game';
             } else {
-                alert("Đã xảy ra lỗi khi lưu vật phẩm.");
+                // Khi gửi N=10000 object, file JSON có thể lên tới vài Megabyte
+                // Nếu báo lỗi ở đây, Backend C# của bạn đang giới hạn dung lượng Request Size
+                alert("Lỗi! Có thể Payload gửi lên quá lớn (Vượt quá dung lượng cho phép của Backend).");
             }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert("Lỗi kết nối máy chủ khi gửi dữ liệu!");
         });
 }
 

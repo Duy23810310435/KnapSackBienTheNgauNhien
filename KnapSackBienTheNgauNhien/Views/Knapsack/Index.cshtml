@@ -1,20 +1,67 @@
 ﻿@{
     ViewData["Title"] = "Bước 1: Khởi tạo vật phẩm";
 }
-
 <link rel="stylesheet" href="~/css/knapsack.css" />
+
+<style>
+    /* Định dạng khung chứa có thể cuộn */
+    .scrollable-zone {
+        max-height: 450px; /* Chiều cao tối đa. Vượt quá sẽ hiện thanh cuộn */
+        overflow-y: auto; /* Chỉ cuộn dọc */
+        overflow-x: hidden;
+        padding: 15px;
+        border-radius: 8px;
+        align-content: flex-start; /* Các vật phẩm tự động dồn lên trên */
+        background: rgba(0, 0, 0, 0.2);
+        border: 2px dashed #5a6268;
+        margin-top: 20px;
+    }
+
+        /* LÀM ĐẸP THANH CUỘN (SCROLLBAR) THEO PHONG CÁCH GAME */
+        .scrollable-zone::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .scrollable-zone::-webkit-scrollbar-track {
+            background: #1a252f;
+            border-radius: 8px;
+        }
+
+        .scrollable-zone::-webkit-scrollbar-thumb {
+            background: #FFD700; /* Màu Vàng Gold đồng bộ với tiêu đề */
+            border-radius: 8px;
+            border: 2px solid #1a252f;
+        }
+
+            .scrollable-zone::-webkit-scrollbar-thumb:hover {
+                background: #e6c200;
+            }
+</style>
 
 <div class="knapsack-container">
     <h2 style="text-align:center; color: #FFD700; text-transform: uppercase; letter-spacing: 2px;">QUAY SỐ VẬT PHẨM</h2>
-    <p style="text-align:center; color: #b0c4de; margin-bottom: 30px;">Nhấn nút xoay để làm mới thuộc tính ngẫu nhiên của 10 vật phẩm</p>
+    <p style="text-align:center; color: #b0c4de; margin-bottom: 30px;">Nhấn nút xoay để làm mới thuộc tính ngẫu nhiên của các vật phẩm</p>
+
+    <div class="controls" style="margin-bottom: 25px; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
+        <label for="item-count" style="color: #fff; font-weight: bold; margin-right: 15px; font-size: 16px;">Chọn Quy mô Bài toán (N):</label>
+        <select id="item-count" style="padding: 10px; border-radius: 5px; font-size: 15px; font-weight: bold; cursor: pointer; background: #2c3e50; color: #FFD700; border: 1px solid #FFD700;">
+            <option value="10">Cơ bản: 10 Vật phẩm</option>
+            <option value="50">Trung bình: 50 Vật phẩm</option>
+            <option value="100">Lớn: 100 Vật phẩm</option>
+            <option value="500">Rất Lớn: 500 Vật phẩm</option>
+            <option value="1000">Cực đại: 1,000 Vật phẩm</option>
+            <option value="5000">Thử thách Giới hạn: 5,000 Vật phẩm (Xin lưu ý)</option>
+            <option value="10000">Hủy diệt: 10,000 Vật phẩm (Cân nhắc kỹ!)</option>
+        </select>
+    </div>
 
     <div class="controls">
         <button class="btn" id="btn-generate" onclick="generateRandomItems()">Xoay ngẫu nhiên lại</button>
         <button class="btn btn-success" id="btn-submit" onclick="submitItems()">Chốt danh sách & Chơi</button>
     </div>
 
-    <div class="item-grid" id="item-container" style="min-height: 400px;">
+    <div class="item-grid scrollable-zone" id="item-container" style="min-height: 400px;">
     </div>
 </div>
 
-<script src="~/js/knapsack-setup.js"></script>
+<script src="~/js/knapsack-setup.js" asp-append-version="true"></script>

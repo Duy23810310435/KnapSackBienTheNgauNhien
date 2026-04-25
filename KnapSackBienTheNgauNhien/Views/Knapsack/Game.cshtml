@@ -2,19 +2,61 @@
 @{
     ViewData["Title"] = "Bước 2: Xếp Balo";
 }
-
 <link rel="stylesheet" href="~/css/knapsack.css" />
+
+<style>
+    /* Định dạng khung chứa có thể cuộn */
+    .scrollable-zone {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 15px;
+        border-radius: 8px;
+        align-content: flex-start;
+    }
+
+    #source-zone {
+        background: rgba(0, 0, 0, 0.2);
+        border: 2px dashed #5a6268;
+    }
+
+    #backpack-zone {
+        background: rgba(39, 174, 96, 0.05);
+        border: 2px dashed #27ae60;
+        min-height: 180px;
+    }
+
+    .scrollable-zone::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .scrollable-zone::-webkit-scrollbar-track {
+        background: #1a252f;
+        border-radius: 8px;
+    }
+
+    .scrollable-zone::-webkit-scrollbar-thumb {
+        background: #FFD700;
+        border-radius: 8px;
+        border: 2px solid #1a252f;
+    }
+
+        .scrollable-zone::-webkit-scrollbar-thumb:hover {
+            background: #e6c200;
+        }
+</style>
 
 <div class="knapsack-container">
     <h2 style="text-align:center; color: #FFD700; text-transform: uppercase; letter-spacing: 2px;">Phân loại vật phẩm</h2>
 
     <div class="controls">
         <a href="/Knapsack/Index" class="btn btn-secondary">⬅ Quay lại xoay vật phẩm mới</a>
-        <button class="btn btn-success" id="btn-ai-solve">Tự động xếp bằng AI</button>
+        <button class="btn btn-warning" id="btn-rs-solve">Xếp bằng Random Search</button>
+        <button class="btn btn-success" id="btn-ga-solve">Xếp bằng Genetic Algorithm (GA)</button>
     </div>
 
     <h3 class="zone-header">Kho vật phẩm chờ phân loại</h3>
-    <div class="item-grid" id="source-zone">
+    <div class="item-grid scrollable-zone" id="source-zone">
         @foreach (var item in Model)
         {
             <div class="item-card" draggable="true" id="item-@item.Id"
@@ -47,9 +89,73 @@
         </div>
     </div>
 
+    <div class="analytics-board" style="background: rgba(0, 0, 0, 0.5); border: 2px solid #FFD700; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);">
+        <h4 style="color: #FFD700; text-align: center; margin-bottom: 15px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;"> Bảng Phân Tích Hiệu Năng Chuyên Sâu (A/B Testing)</h4>
+
+        <div style="display: flex; gap: 20px; justify-content: space-between;">
+
+            <div style="flex: 1; background: rgba(52, 152, 219, 0.1); border: 1px solid #3498db; padding: 15px; border-radius: 8px;">
+                <h5 style="color: #3498db; text-align: center; margin-top: 0; margin-bottom: 12px; border-bottom: 1px dashed #3498db; padding-bottom: 8px; text-transform: uppercase;">🎲 Random Search</h5>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Thời gian chạy:</span> <strong id="rs-time" style="color: #e74c3c;">N/A</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Quy mô / Đã nhặt:</span> <strong id="rs-picked" style="color: #fff;">N/A</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Trọng lượng lấp đầy:</span> <strong id="rs-weight" style="color: #e67e22;">N/A</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Hiệu suất ($ / kg):</span> <strong id="rs-efficiency" style="color: #f1c40f;">N/A</strong>
+                </div>
+
+                <div style="border-top: 1px solid rgba(52, 152, 219, 0.3); padding-top: 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="text-align: left;">
+                        <span style="color: #95a5a6; font-size: 12px; text-transform: uppercase; font-weight: bold;">👎 Kém nhất (Min)</span><br>
+                        <strong id="rs-min-value" style="color: #e74c3c; font-size: 18px;">N/A</strong>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="color: #b0c4de; font-size: 12px; text-transform: uppercase; font-weight: bold;">🏆 Tốt nhất (Max)</span><br>
+                        <strong id="rs-max-value" style="color: #2ecc71; font-size: 22px;">N/A</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div style="flex: 1; background: rgba(46, 204, 113, 0.1); border: 1px solid #2ecc71; padding: 15px; border-radius: 8px;">
+                <h5 style="color: #2ecc71; text-align: center; margin-top: 0; margin-bottom: 12px; border-bottom: 1px dashed #2ecc71; padding-bottom: 8px; text-transform: uppercase;">🧬 Genetic Algorithm</h5>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Thời gian chạy:</span> <strong id="ga-time" style="color: #e74c3c;">N/A</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Quy mô / Đã nhặt:</span> <strong id="ga-picked" style="color: #fff;">N/A</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Trọng lượng lấp đầy:</span> <strong id="ga-weight" style="color: #e67e22;">N/A</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px;">
+                    <span style="color: #b0c4de;">Hiệu suất ($ / kg):</span> <strong id="ga-efficiency" style="color: #f1c40f;">N/A</strong>
+                </div>
+
+                <div style="border-top: 1px solid rgba(46, 204, 113, 0.3); padding-top: 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="text-align: left;">
+                        <span style="color: #95a5a6; font-size: 12px; text-transform: uppercase; font-weight: bold;">👎 Kém nhất (Min)</span><br>
+                        <strong id="ga-min-value" style="color: #e74c3c; font-size: 18px;">N/A</strong>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="color: #b0c4de; font-size: 12px; text-transform: uppercase; font-weight: bold;">🏆 Tốt nhất (Max)</span><br>
+                        <strong id="ga-max-value" style="color: #2ecc71; font-size: 22px;">N/A</strong>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <h3 class="zone-header">Balo chứa đồ (Kéo thả vào đây)</h3>
-    <div class="backpack-zone item-grid" id="backpack-zone">
+    <div class="backpack-zone item-grid scrollable-zone" id="backpack-zone">
     </div>
 </div>
 
-<script src="~/js/knapsack-game.js"></script>
+<script src="~/js/knapsack-game.js" asp-append-version="true"></script>
