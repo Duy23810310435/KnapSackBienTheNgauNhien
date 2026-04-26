@@ -6,6 +6,17 @@ let activeTimeouts = [];
 
 //KHAI BÁO BIẾN AUDIO CONTEXT TOÀN CỤC
 let audioCtx = null;
+// 
+// HÀM TẠO SỐ NGẪU NHIÊN DỰA TRÊN SEED (PRNG)
+// JavaScript mặc định không có hàm Seed, nên cần tự viết một hàm thay thế
+// Math.random(). Hàm này sẽ luôn trả về một chuỗi số y hệt nhau nếu Seed giống nhau.
+// 
+let currentSeed = 12345; // Giá trị Seed mặc định
+
+function randomWithSeed() {
+    let x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+}
 function initAudio() {
     if (!audioCtx) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -24,7 +35,12 @@ function playTickSound() {
     const gainNode = audioCtx.createGain();
 
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(800 + Math.random() * 200, audioCtx.currentTime);
+    // 
+    // THAY THẾ MATH.RANDOM BẰNG HÀM 'randomWithSeed' TRONG ÂM THANH
+    // 
+    osc.frequency.setValueAtTime(800 + randomWithSeed() * 200, audioCtx.currentTime);
+    //osc.frequency.setValueAtTime(800 + Math.random() * 200, audioCtx.currentTime);
+
 
     gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
@@ -68,13 +84,20 @@ function generateRandomItems() {
 
     // Lấy số lượng vật phẩm (N) do người chơi chọn
     const totalItems = countSelect ? parseInt(countSelect.value) : 10;
-
+    // 
+    // LẤY MÃ SEED TỪ GIAO DIỆN HTML (NẾU CÓ)
+    // Nếu người dùng nhập Seed, lấy giá trị đó. Nếu để trống, dùng mặc định 12345.
+    // Việc reset currentSeed ở đây giúp mỗi lần nhấn "Xoay", danh sách vẫn giống hệt nhau!
+    //
+    const seedInput = document.getElementById('seed-input');
+    currentSeed = (seedInput && seedInput.value) ? parseInt(seedInput.value) : 12345;
+    // =========================================================================
     const danhSachTenVatPham = [
         "[⌐╦ᡁ᠊╾]Súng lục 1911", "[⌐╦ᡁ᠊╾]Súng lục Baretta M9A4", "[⌐╦ᡁ᠊╾]Súng lục Desert Eagle .50", "[⌐╦ᡁ᠊╾]Súng lục Glock 17",
         "[╾╤デ╦︻]           Súng trường AK-47", "[ᡕᠵデᡁ᠊╾━]       Súng bắn tỉa M24", "[⌯⁍]Hộp đạn 9mm", "[⌯⁍]Băng đạn .45 ACP (1911)",
         "[⌯⁍]Băng đạn .50 AE (Desert Eagle)", "[⌯⁍]Hộp đạn 5.56mm NATO", "[⌯⁍]Băng đạn AK-47 7.62x39",
         "[⌯⁍]Hộp đạn (sniper)", "[⌯⁍]Mag STANAG 30 viên", "[⌯⁍]Drum mag AK-75 viên",
-        "[🧨💥]Lựu đạn M67", "[🧨💨]Bom khói M18", "[🧨😵‍💫]                                        Flashbang M84",
+        "[🧨💥]Lựu đạn M67", "[🧨💨]Bom khói M18", "[🧨😵‍💫]     Flashbang M84",
         "[🧰]Băng cứu thương (Medkit)", "[💊]Thuốc giảm đau (Painkillers)",
         "[⛑]Mũ cối Level 3", "[🎽]Giáp chống đạn Level 4", "[⛑]Mũ ACH Level 3A", "[🎽]Plate Carrier với tấm ceramic",
         "[🎽]Áo Giáp Kevlar", "[⛑]Mũ OPS-Core FAST", "[🎽]Áo giáp mềm NIJ Level II", "Kính bảo hộ balistic",
@@ -86,9 +109,17 @@ function generateRandomItems() {
 
     // BƯỚC 1: XỬ LÝ DỮ LIỆU TỨC THÌ (Tạo mảng cực nhanh trong bộ nhớ)
     for (let i = 1; i <= totalItems; i++) {
-        const weight = Math.floor(Math.random() * 20) + 1;
-        const value = Math.floor(Math.random() * 90) + 10;
-        const viTriNgauNhien = Math.floor(Math.random() * danhSachTenVatPham.length);
+        //
+        // THAY THẾ TOÀN BỘ MATH.RANDOM() BẰNG RANDOMWITHSEED()
+        // Việc này đảm bảo Trọng lượng, Giá trị và Tên vật phẩm luôn cố định theo Seed
+        //
+        const weight = Math.floor(randomWithSeed() * 20) + 1;
+        const value = Math.floor(randomWithSeed() * 90) + 10;
+        const viTriNgauNhien = Math.floor(randomWithSeed() * danhSachTenVatPham.length);
+        // 
+        //const weight = Math.floor(Math.random() * 20) + 1;
+        //const value = Math.floor(Math.random() * 90) + 10;
+        //const viTriNgauNhien = Math.floor(Math.random() * danhSachTenVatPham.length);
         const tenVatPham = danhSachTenVatPham[viTriNgauNhien];
 
         currentItems.push({
@@ -180,7 +211,7 @@ function submitItems() {
                 window.location.href = '/Knapsack/Game';
             } else {
                 // Khi gửi N=10000 object, file JSON có thể lên tới vài Megabyte
-                // Nếu báo lỗi ở đây, Backend C# của bạn đang giới hạn dung lượng Request Size
+                // Nếu báo lỗi ở đây, Backend C# của ta đang giới hạn dung lượng Request Size
                 alert("Lỗi! Có thể Payload gửi lên quá lớn (Vượt quá dung lượng cho phép của Backend).");
             }
         })

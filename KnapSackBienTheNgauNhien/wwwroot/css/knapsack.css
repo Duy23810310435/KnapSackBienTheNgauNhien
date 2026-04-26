@@ -65,7 +65,7 @@ body {
     flex-wrap: wrap;
     gap: 15px;
     justify-content: center;
-    min-height: 160px;
+    min-height: 350px;
     padding: 20px;
     background-color: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
@@ -75,6 +75,7 @@ body {
     /* 2 DÒNG NÀY ĐỂ SỬA LỖI STRETCH */
     align-items: flex-start;
     align-content: flex-start;
+    contain: layout paint;
 }
 
 /* Thẻ vật phẩm - Hiệu ứng Hover mượt mà */
@@ -82,7 +83,13 @@ body {
     background: #1e2a35;
     border: 2px solid transparent;
     border-radius: 12px;
+    min-height: 130px;
     width: 150px;
+    /* tối ưu GPU */
+    transform: translateZ(0);
+    will-change: transform;
+
+
     padding: 15px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -96,7 +103,7 @@ body {
 }
 
     .item-card:hover {
-        transform: scale(1.05) translateY(-5px);
+        transform: scale(1.02) translateY(-4px);
         border-color: #17a2b8;
         box-shadow: 0 8px 20px rgba(23, 162, 184, 0.4);
     }
@@ -244,11 +251,19 @@ body {
     }
 }
 .controls {
-    text-align: center;
-    margin-bottom: 40px; /* Tăng từ 20px lên 40px để đẩy lùi phần vật phẩm xuống */
+    margin-bottom: 25px;
+    background: rgba(0,0,0,0.35);
+    padding: 20px;
+    border-radius: 12px;
     display: flex;
-    justify-content: center;
-    gap: 15px; /* Tạo khoảng cách 15px giữa các nút bấm với nhau */
+    flex-direction: column;
+    gap: 20px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 /* THÊM CLASS MỚI CHO NÚT QUAY LẠI */
@@ -261,7 +276,67 @@ body {
     justify-content: center;
     box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
 }
+.control-group.row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
 
+.label-group label {
+    color: #fff;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.label-group span {
+    color: #cbd5e1;
+    font-size: 13px;
+}
+
+input.form-control {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background: #1e293b;
+    color: white;
+    font-size: 14px;
+    outline: none;
+}
+
+input.form-control:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 6px rgba(59,130,246,0.5);
+}
+
+select {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #1e293b;
+    color: #FFD700;
+    border: 1px solid #FFD700;
+    min-width: 250px;
+}
+
+    select:hover {
+        background: #273549;
+    }
+
+/* Responsive fix */
+@media (max-width: 600px) {
+    .control-group.row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    select {
+        width: 100%;
+    }
+}
     .btn-secondary:hover {
         color: white;
         box-shadow: 0 6px 20px rgba(108, 117, 125, 0.6);
@@ -282,3 +357,82 @@ body {
         transform: scale(1) translateY(0) rotate(0);
     }
 }
+/*  INLINE LAYOUT (KHÔNG GRID)  */
+.controls.row-inline {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* Căn giữa riêng cho hàng button */
+.controls.row-inline.center {
+    justify-content: center;
+}
+
+/* Mỗi block input */
+.control-item {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Label gọn hơn */
+.control-item label {
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Button đẹp hơn khi nằm cùng hàng */
+.controls.row-inline.center .btn {
+    min-width: 200px;
+    text-align: center;
+}
+/*  NOTE STYLE (GHI CHÚ NHẸ NHÀNG) */
+.seed-note {
+    margin-top: 6px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid #FFD700;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #cbd5e1;
+    font-style: italic;
+    /* Hiệu ứng nhẹ */
+    transition: all 0.25s ease;
+}
+
+    /* Hover nhẹ cho cảm giác tương tác */
+    .seed-note:hover {
+        background: rgba(255, 255, 255, 0.08);
+        /*transform: scale(1.2);*/
+        z-index:100;
+        opacity:1;
+        font-weight:bolder;
+    }
+.controls.row-inline.center {
+    transition: all 0.25s ease;
+}
+
+/* Hover vào cả vùng → scale toàn bộ */
+.controls.row-inline.center:hover {
+    transform: scale(1.05);
+    z-index: 100;
+    transform-origin: center;
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+.controls.row-inline.center:hover {
+    transform: scale(1.05);
+}
+
+.controls.row-inline.center:hover .seed-note {
+    color: #ffffff;
+}
+
