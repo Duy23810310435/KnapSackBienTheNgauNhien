@@ -9,3 +9,4 @@ Lê Công Đức - 23810310313 - D18CNPM4 (Chạy kiểm thử các tiêu chí s
 <img width="2865" height="4902" alt="screencapture-localhost-7069-Knapsack-Game-2026-05-30-13_18_45" src="https://github.com/user-attachments/assets/3ec9862e-da16-42ed-b6e9-d70043d0b3f9" />
 <img width="2865" height="5616" alt="screencapture-localhost-7069-Knapsack-Game-2026-05-30-13_20_08" src="https://github.com/user-attachments/assets/bd7e9186-98c3-49f8-9931-c5025d7619e4" />
 <img width="2865" height="4473" alt="screencapture-localhost-7069-Knapsack-Game-2026-05-30-13_20_58" src="https://github.com/user-attachments/assets/d91864b2-c01e-4348-9e04-a3032867757b" />
+<img width="2865" height="4833" alt="screencapture-localhost-7069-Knapsack-Game-2026-05-30-13_22_41" src="https://github.com/user-attachments/assets/aeee403f-f0e8-4575-9227-71dbb59230e6" />
